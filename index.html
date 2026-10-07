@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌊 MTP Key System</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body {
+    min-height:100vh;
+    background: linear-gradient(180deg, #0077be 0%, #00a8e8 40%, #48cae4 70%, #90e0ef 100%);
+    display:flex; justify-content:center; align-items:center;
+    overflow-x:hidden; position:relative; padding:20px;
+  }
+  /* Sóng biển */
+  body::before, body::after {
+    content:''; position:fixed; bottom:0; left:0; width:200%; height:120px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, transparent 70%);
+    animation: wave 8s linear infinite;
+  }
+  body::after { animation-duration:12s; animation-direction:reverse; opacity:0.5; }
+  @keyframes wave { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  .container {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 35px 30px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,50,100,0.3);
+    position: relative; z-index:10;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
+  h1 { text-align:center; color:#0077be; margin-bottom:8px; font-size:26px; }
+  .subtitle { text-align:center; color:#48cae4; font-size:13px; margin-bottom:25px; }
+
+  input {
+    width:100%; padding:14px 16px; margin-bottom:12px;
+    border:2px solid #90e0ef; border-radius:12px;
+    font-size:15px; outline:none; transition:0.3s;
+    background:#f0fbff;
+  }
+  input:focus { border-color:#0077be; background:#fff; box-shadow:0 0 0 4px rgba(0,119,190,0.1); }
+
+  button {
+    width:100%; padding:14px; border:none; border-radius:12px;
+    background: linear-gradient(135deg, #0077be, #00a8e8);
+    color:#fff; font-size:16px; font-weight:600; cursor:pointer;
+    transition:0.3s; margin-bottom:10px;
+  }
+  button:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,119,190,0.4); }
+  button:active { transform:translateY(0); }
+
+  .admin-link {
+    text-align:center; font-size:12px; color:#48cae4;
+    cursor:pointer; margin-top:15px; user-select:none;
+    transition:0.3s;
+  }
+  .admin-link:hover { color:#0077be; text-decoration:underline; }
+
+  .hidden { display:none !important; }
+
+  .message {
+    padding:12px; border-radius:10px; text-align:center;
+    font-size:14px; margin-bottom:15px; font-weight:500;
+  }
+  .error { background:#ffe0e0; color:#c00; }
+  .success { background:#d4f8d4; color:#060; }
+
+  /* Admin panel */
+  #adminPanel { max-width: 600px; }
+  .key-options {
+    display:grid; grid-template-columns: repeat(2, 1fr);
+    gap:10px; margin-bottom:20px;
+  }
+  .key-options button { margin:0; padding:12px; font-size:14px; }
+  .btn-perm { background: linear-gradient(135deg, #f77f00, #fcbf49) !important; grid-column: span 2; }
+
+  .key-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px; background:#f0fbff; border-radius:10px;
+    margin-bottom:8px; border-left:4px solid #00a8e8;
+    cursor:pointer; transition:0.2s; font-size:13px;
+  }
+  .key-item:hover { background:#e0f4ff; transform:translateX(3px); }
+  .key-code { font-family:'Courier New',monospace; font-weight:700; color:#0077be; }
+  .key-badge {
+    background:#00a8e8; color:#fff; padding:3px 10px;
+    border-radius:20px; font-size:11px; margin-left:8px;
+  }
+  .copy-hint { font-size:11px; color:#888; margin-top:15px; text-align:center; }
+
+  .section-title { color:#0077be; font-size:16px; margin:20px 0 10px; font-weight"></:700; }
+
+  .back-btn { background:#90e0ef !important; color:#003049 !important; }
+
+  .toast {
+    positiondiv:fixed; top:20px; left:50%; transform:translateX(-50%);
+    background:#00a8e8; color:#fff;>
+
+ padding:12px 24px;
+    border-radius:30px; font-size:14px; z-index:999;
+    box-shadow:0 8px 25px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown { from{opacity:0; top:-50px} to{opacity:1; top:20px} }
+
+  .key-info { font-size:11px; color:#666; }
+</style>
+</head>
+<body>
+
+<div class="container" id="mainBox">
+  <h1>🌊 MTP Key System</h1>
+  <p class="subtitle">Nhập key để sử dụng</p>
+
+  <div id="msgBox"></div>
+
+  <input type="text" id="keyInput" placeholder="Nhập key của bạn...">
+  <button onclick="checkKey()">🔓 Xác Nhận Key</button>
+
+  <div class="admin-link" onclick="showAdminLogin()">⚙️ admin</div>
+</div>
+
+<!-- Admin Login -->
+<div class="container hidden" id="adminLogin">
+  <h1>🔐 Admin Login</h1>
+  <p class="subtitle">Chỉ dành cho quản trị viên</p>
+  <div id="adminMsgBox  <input type="text" id="adminUser" placeholder="Tên đăng nhập">
+  <input type="password" id="adminPass" placeholder="Mật khẩu">
+  <button onclick="adminLogin()">Đăng Nhập</button>
+  <button class="back-btn" onclick="showMain()">← Quay lại</button>
+</div>
+
+<!-- Admin Panel -->
+<div class="container hidden" id="adminPanel">
+  <h1>👑 Bảng Điều Khiển</h1>
+  <p class="subtitle">Xin chào, <b id="adminName"></b></p>
+
+  <div class="section-title">🎫 Tạo Key Mới</div>
+  <div class="key-options">
+    <button onclick="createKey('1h')">⏱️ 1 Giờ</button>
+    <button onclick="createKey('10h')">⏱️ 10 Giờ</button>
+    <button onclick="createKey('1d')">📅 1 Ngày</button>
+    <button onclick="createKey('3d')">📅 3 Ngày</button>
+    <button onclick="createKey('7d')">📅 7 Ngày</button>
+    <button onclick="createKey('30d')">📅 30 Ngày</button>
+    <button onclick="createKey('60d')">📅 60 Ngày</button>
+    <button class="btn-perm" onclick="createKey('perm')">♾️ Vĩnh Viễn</button>
+  </div>
+
+  <div class="section-title">📋 Danh Sách Key</div>
+  <div id="keyList"></div>
+  <p class="copy-hint">💡 Click vào key để sao chép</p>
+
+  <button class="back-btn" style="margin-top:20px;" onclick="logout()">Đăng Xuất</button>
+</div>
+
+<script>
+// ============ CẤU HÌNH ADMIN ============
+const ADMIN_USER = "MTP";
+const ADMIN_PASS = "MTP098";
+
+// ============ DỮ LIỆU ============
+let validKeys = JSON.parse(localStorage.getItem('mtp_keys') || '[]');
+let usedKeys = JSON.parse(localStorage.getItem('mtp_used') || '[]');
+let currentUser = null;
+
+// ============ HIỂN THỊ ============
+function showMain() {
+  document.getElementById('mainBox').classList.remove('hidden');
+  document.getElementById('adminLogin').classList.add('hidden');
+  document.getElementById('adminPanel').classList.add('hidden');
+}
+function showAdminLogin() {
+  document.getElementById('mainBox').classList.add('hidden');
+  document.getElementById('adminLogin').classList.remove('hidden');
+  document.getElementById('adminPanel').classList.add('hidden');
+}
+function showAdminPanel() {
+  document.getElementById('mainBox').classList.add('hidden');
+  document.getElementById('adminLogin').classList.add('hidden');
+  document.getElementById('adminPanel').classList.remove('hidden');
+  document.getElementById('adminName').textContent = ADMIN_USER;
+  renderKeys();
+}
+
+// ============ THÔNG BÁO ============
+function showMsg(boxId, text, type) {
+  const box = document.getElementById(boxId);
+  box.innerHTML = `<div class="message ${type}">${text}</div>`;
+  setTimeout(() => box.innerHTML = '', 3000);
+}
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ============ TẠO KEY ============
+function randomStr(len = 4) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let r = '';
+  for (let i = 0; i < len; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return r;
+}
+
+function createKey(duration) {
+  const rand = randomStr(4);
+  const key = `MTP-${duration}x-${rand}`;
+  const created = Date.now();
+  
+  let expire = null;
+  if (duration !== 'perm') {
+    const ms = {
+      '1h': 3600000,
+      '10h': 36000000,
+      '1d': 86400000,
+      '3d': 259200000,
+      '7d': 604800000,
+      '30d': 2592000000,
+      '60d': 5184000000
+    }[duration];
+    expire = created + ms;
+  }
+
+  validKeys.push({ key, duration, created, expire });
+  saveKeys();
+  renderKeys();
+  toast(`✅ Đã tạo key: ${key}`);
+}
+
+function saveKeys() {
+  localStorage.setItem('mtp_keys', JSON.stringify(validKeys));
+  localStorage.setItem('mtp_used', JSON.stringify(usedKeys));
+}
+
+// ============ HIỂN THỊ KEY ============
+function renderKeys() {
+  const list = document.getElementById('keyList');
+  if (validKeys.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:#999;font-size:13px;">Chưa có key nào</p>';
+    return;
+  }
+  list.innerHTML = validKeys.map((k, i) => {
+    const expired = k.expire && Date.now() > k.expire;
+    const used = usedKeys.includes(k.key);
+    const status = expired ? '❌ Hết hạn' : (used ? '✅ Đã dùng' : '🟢 Hoạt động');
+    return `
+      <div class="key-item" onclick="copyKey('${k.key}')">
+        <div>
+          <div class="key-code">${k.key}</div>
+          <div class="key-info">${status}</div>
+        </div>
+        <span class="key-badge">${k.duration}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============ COPY KEY ============
+function copyKey(key) {
+  navigator.clipboard.writeText(key).then(() => {
+    toast(`📋 Đã sao chép: ${key}`);
+  }).catch(() => {
+    // Fallback cho trình duyệt cũ
+    const ta = document.createElement('textarea');
+    ta.value = key;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast(`📋 Đã sao chép: ${key}`);
+  });
+}
+
+// ============ KIỂM TRA KEY ============
+function checkKey() {
+  const input = document.getElementById('keyInput').value.trim();
+  if (!input) {
+    showMsg('msgBox', '⚠️ Vui lòng nhập key!', 'error');
+    return;
+  }
+
+  const found = validKeys.find(k => k.key === input);
+  if (!found) {
+    showMsg('msgBox', '❌ Key không hợp lệ!', 'error');
+    return;
+  }
+  if (usedKeys.includes(input)) {
+    showMsg('msgBox', '❌ Key đã được sử dụng!', 'error');
+    return;
+  }
+  if (found.expire && Date.now() > found.expire) {
+    showMsg('msgBox', '❌ Key đã hết hạn!', 'error');
+    return;
+  }
+
+  usedKeys.push(input);
+  saveKeys();
+  currentUser = input;
+  showMsg('msgBox', '✅ Xác nhận thành công! Đang vào...', 'success');
+  setTimeout(() => {
+    alert(`🌊 Chào mừng!\n\nKey: ${input}\nHạn: ${found.duration === 'perm' ? 'Vĩnh viễn' : found.duration}\n\nBạn đã có thể sử dụng hệ thống!`);
+    // TODO: chuyển đến app chính
+  }, 800);
+}
+
+// ============ ADMIN ============
+function adminLogin() {
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value.trim();
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    showAdminPanel();
+  } else {
+    showMsg('adminMsgBox', '❌ Sai tên hoặc mật khẩu!', 'error');
+  }
+}
+
+function logout() {
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  showMain();
+  toast('👋 Đã đăng xuất');
+}
+
+// Enter để submit
+document.getElementById('keyInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') checkKey();
+});
+document.getElementById('adminPass').addEventListener('keypress', e => {
+  if (e.key === 'Enter') adminLogin();
+});
+</script>
+</body>
+</html>
